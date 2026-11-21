@@ -72,6 +72,29 @@ class TestTechnicalIndicators(unittest.TestCase):
         with self.assertRaises(ValueError):
             TechnicalIndicators.vwap([10.0, 20.0], [5.0])
 
+    def test_average_true_range(self):
+        highs = [48.70, 48.72, 48.90, 48.87, 48.82, 49.05, 49.20, 49.35, 49.92, 50.19, 50.12, 49.66, 50.46, 50.65, 50.96]
+        lows = [47.79, 48.14, 48.39, 48.37, 48.24, 48.64, 48.94, 48.86, 49.50, 49.87, 49.20, 48.98, 49.70, 49.85, 50.40]
+        closes = [48.16, 48.61, 48.75, 48.63, 48.74, 49.03, 49.07, 49.32, 49.91, 50.13, 49.53, 49.50, 50.23, 50.41, 50.81]
+
+        atr = TechnicalIndicators.average_true_range(highs, lows, closes, period=14)
+        self.assertEqual(len(atr), 15)
+        self.assertIsNone(atr[0])
+        self.assertIsNotNone(atr[13])
+        self.assertIsNotNone(atr[14])
+        self.assertGreater(atr[14], 0.0)
+
+    def test_supertrend_calculation(self):
+        highs = [10.0 + i for i in range(20)]
+        lows = [8.0 + i for i in range(20)]
+        closes = [9.5 + i for i in range(20)]
+
+        st_res = TechnicalIndicators.supertrend(highs, lows, closes, period=5, multiplier=2.0)
+        self.assertIn("supertrend", st_res)
+        self.assertIn("direction", st_res)
+        # In a steady uptrend, direction should be bullish (+1)
+        self.assertEqual(st_res["direction"][-1], 1)
+
 
 class TestMarketSignalEngine(unittest.TestCase):
     def test_golden_cross_detection(self):

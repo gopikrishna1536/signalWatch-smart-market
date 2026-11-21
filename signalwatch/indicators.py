@@ -202,3 +202,109 @@ class TechnicalIndicators:
                 vwap_series.append(None)
 
         return vwap_series
+
+    @staticmethod
+    def average_true_range(
+        highs: List[float],
+        lows: List[float],
+        closes: List[float],
+        period: int = 14
+    ) -> List[Optional[float]]:
+        """
+        Calculates Average True Range (ATR) using Wilder's smoothing method.
+        TR = max(High - Low, |High - PrevClose|, |Low - PrevClose|)
+        """
+        n = len(closes)
+        if len(highs) != n or len(lows) != n:
+            raise ValueError("Highs, lows, and closes lists must have identical lengths.")
+        if period <= 0:
+            raise ValueError("Period must be greater than zero.")
+        if n < period:
+            return [None] * n
+
+        # Calculate True Range (TR)
+        tr_list: List[float] = []
+        for i in range(n):
+            if i == 0:
+                tr = highs[i] - lows[i]
+            else:
+                prev_close = closes[i - 1]
+                tr = max(
+                    highs[i] - lows[i],
+                    abs(highs[i] - prev_close),
+                    abs(lows[i] - prev_close)
+                )
+            tr_list.append(tr)
+
+        atr: List[Optional[float]] = [None] * (period - 1)
+        # Initial ATR is simple average of first period TRs
+        initial_atr = sum(tr_list[:period]) / period
+        atr.append(round(initial_atr, 4))
+
+        current_atr = initial_atr
+        for i in range(period, n):
+            current_atr = (current_atr * (period - 1) + tr_list[i]) / period
+            atr.append(round(current_atr, 4))
+
+        return atr
+
+    @staticmethod
+    def supertrend(
+        highs: List[float],
+        lows: List[float],
+        closes: List[float],
+        period: int = 10,
+        multiplier: float = 3.0
+    ) -> Dict[str, List[Optional[float]]]:
+        """
+        Calculates the SuperTrend indicator.
+        Returns dictionary containing:
+        - 'supertrend': the active dynamic trailing stop level
+        - 'direction': 1 for bullish (uptrend), -1 for bearish (downtrend)
+        """
+        atr = TechnicalIndicators.average_true_range(highs, lows, closes, period)
+        n = len(closes)
+
+        supertrend: List[Optional[float]] = [None] * n
+        direction: List[Optional[int]] = [None] * n
+
+        upper_band: List[float] = [0.0] * n
+        lower_band: List[float] = [0.0] * n
+
+        first_valid = period - 1
+        for i in range(first_valid, n):
+            hl2 = (highs[i] + lows[i]) / 2.0
+            basic_upper = hl2 + (multiplier * atr[i])
+            basic_lower = hl2 - (multiplier * atr[i])
+
+            if i == first_valid:
+                upper_band[i] = basic_upper
+                lower_band[i] = basic_lower
+                direction[i] = 1 if closes[i] >= lower_band[i] else -1
+                supertrend[i] = round(lower_band[i] if direction[i] == 1 else upper_band[i], 4)
+                continue
+
+            # Upper Band logic
+            if basic_upper < upper_band[i - 1] or closes[i - 1] > upper_band[i - 1]:
+                upper_band[i] = basic_upper
+            else:
+                upper_band[i] = upper_band[i - 1]
+
+            # Lower Band logic
+            if basic_lower > lower_band[i - 1] or closes[i - 1] < lower_band[i - 1]:
+                lower_band[i] = basic_lower
+            else:
+                lower_band[i] = lower_band[i - 1]
+
+            # Direction logic
+            if supertrend[i - 1] == upper_band[i - 1]:
+                direction[i] = 1 if closes[i] > upper_band[i] else -1
+            else:
+                direction[i] = -1 if closes[i] < lower_band[i] else 1
+
+            supertrend[i] = round(lower_band[i] if direction[i] == 1 else upper_band[i], 4)
+
+        return {
+            "supertrend": supertrend,
+            "direction": direction
+        }

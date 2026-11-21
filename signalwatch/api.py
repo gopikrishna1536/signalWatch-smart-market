@@ -80,6 +80,39 @@ def compute_vwap(req: PriceVolumeSeriesRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+class OHLCVSeriesRequest(BaseModel):
+    ticker: str = Field(..., example="AAPL")
+    highs: List[float] = Field(..., min_length=1)
+    lows: List[float] = Field(..., min_length=1)
+    closes: List[float] = Field(..., min_length=1)
+
+@app.post("/api/indicators/atr")
+def compute_atr(req: OHLCVSeriesRequest, period: int = 14):
+    try:
+        atr_series = TechnicalIndicators.average_true_range(req.highs, req.lows, req.closes, period)
+        return {
+            "ticker": req.ticker,
+            "period": period,
+            "count": len(atr_series),
+            "atr": atr_series
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/indicators/supertrend")
+def compute_supertrend(req: OHLCVSeriesRequest, period: int = 10, multiplier: float = 3.0):
+    try:
+        st_data = TechnicalIndicators.supertrend(req.highs, req.lows, req.closes, period, multiplier)
+        return {
+            "ticker": req.ticker,
+            "period": period,
+            "multiplier": multiplier,
+            "count": len(st_data["supertrend"]),
+            "data": st_data
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.post("/api/signals/analyze")
 def analyze_signals(req: PriceSeriesRequest, fast_window: int = 5, slow_window: int = 20):
     try:

@@ -308,3 +308,72 @@ class TechnicalIndicators:
             "supertrend": supertrend,
             "direction": direction
         }
+
+    @staticmethod
+    def commodity_channel_index(
+        highs: List[float],
+        lows: List[float],
+        closes: List[float],
+        period: int = 20
+    ) -> List[Optional[float]]:
+        """
+        Calculates Commodity Channel Index (CCI).
+        CCI = (Typical Price - SMA(TP)) / (0.015 * Mean Deviation)
+        """
+        n = len(closes)
+        if len(highs) != n or len(lows) != n:
+            raise ValueError("Highs, lows, and closes lists must have identical lengths.")
+        if period <= 0:
+            raise ValueError("Period must be greater than zero.")
+        if n < period:
+            return [None] * n
+
+        typical_prices = [(highs[i] + lows[i] + closes[i]) / 3.0 for i in range(n)]
+        cci_series: List[Optional[float]] = [None] * (period - 1)
+
+        for i in range(period - 1, n):
+            window = typical_prices[i - period + 1 : i + 1]
+            sma_tp = sum(window) / period
+            mean_dev = sum(abs(tp - sma_tp) for tp in window) / period
+
+            if mean_dev == 0:
+                cci_series.append(0.0)
+            else:
+                cci = (typical_prices[i] - sma_tp) / (0.015 * mean_dev)
+                cci_series.append(round(cci, 4))
+
+        return cci_series
+
+    @staticmethod
+    def williams_r(
+        highs: List[float],
+        lows: List[float],
+        closes: List[float],
+        period: int = 14
+    ) -> List[Optional[float]]:
+        """
+        Calculates Williams %R oscillator (-100 to 0).
+        %R = (Highest High - Close) / (Highest High - Lowest Low) * -100
+        """
+        n = len(closes)
+        if len(highs) != n or len(lows) != n:
+            raise ValueError("Highs, lows, and closes lists must have identical lengths.")
+        if period <= 0:
+            raise ValueError("Period must be greater than zero.")
+        if n < period:
+            return [None] * n
+
+        wr_series: List[Optional[float]] = [None] * (period - 1)
+
+        for i in range(period - 1, n):
+            highest_high = max(highs[i - period + 1 : i + 1])
+            lowest_low = min(lows[i - period + 1 : i + 1])
+            denom = highest_high - lowest_low
+
+            if denom == 0:
+                wr_series.append(-50.0)
+            else:
+                wr = ((highest_high - closes[i]) / denom) * -100.0
+                wr_series.append(round(wr, 4))
+
+        return wr_series

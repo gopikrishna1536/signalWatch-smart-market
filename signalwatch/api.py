@@ -49,6 +49,37 @@ def compute_rsi(req: PriceSeriesRequest, period: int = Query(14, ge=2)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.post("/api/indicators/macd")
+def compute_macd(req: PriceSeriesRequest, fast: int = Query(12, ge=2), slow: int = Query(26, ge=3), signal: int = Query(9, ge=1)):
+    try:
+        macd_data = TechnicalIndicators.macd(req.prices, fast, slow, signal)
+        return {
+            "ticker": req.ticker,
+            "fast_period": fast,
+            "slow_period": slow,
+            "signal_period": signal,
+            "data": macd_data
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class PriceVolumeSeriesRequest(BaseModel):
+    ticker: str = Field(..., example="AAPL")
+    prices: List[float] = Field(..., min_length=1)
+    volumes: List[float] = Field(..., min_length=1)
+
+@app.post("/api/indicators/vwap")
+def compute_vwap(req: PriceVolumeSeriesRequest):
+    try:
+        vwap_series = TechnicalIndicators.vwap(req.prices, req.volumes)
+        return {
+            "ticker": req.ticker,
+            "count": len(vwap_series),
+            "vwap_series": vwap_series
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.post("/api/signals/analyze")
 def analyze_signals(req: PriceSeriesRequest, fast_window: int = 5, slow_window: int = 20):
     try:

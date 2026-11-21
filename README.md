@@ -24,7 +24,13 @@ A high-performance Python quantitative finance engine designed to compute techni
    - Middle Band = $SMA(20)$
    - Upper Band = $SMA(20) + 2\sigma$
    - Lower Band = $SMA(20) - 2\sigma$
-5. **Moving Average Crossovers:**
+5. **Moving Average Convergence Divergence (MACD):**
+   - MACD Line = $EMA(12) - EMA(26)$
+   - Signal Line = $EMA(\text{MACD Line}, 9)$
+   - Histogram = $\text{MACD Line} - \text{Signal Line}$
+6. **Volume-Weighted Average Price (VWAP):**
+   $$VWAP = \frac{\sum (Price \times Volume)}{\sum Volume}$$
+7. **Moving Average Crossovers:**
    - **Golden Cross:** Fast moving average breaks strictly above slow moving average (bullish reversal).
    - **Death Cross:** Fast moving average breaks strictly below slow moving average (bearish breakdown).
 

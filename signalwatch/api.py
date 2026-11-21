@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 from .indicators import TechnicalIndicators
 from .signals import MarketSignalEngine
+from .risk_metrics import RiskMetricsCalculator
 
 app = FastAPI(
     title="SignalWatch Smart Market API",
@@ -124,6 +125,18 @@ def analyze_signals(req: PriceSeriesRequest, fast_window: int = 5, slow_window: 
             "latest_price": req.prices[-1] if req.prices else None,
             "crossover_signals": crossovers,
             "rsi_analysis": rsi_eval
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/analytics/risk-metrics")
+def compute_risk_metrics(req: PriceSeriesRequest, risk_free_rate: float = 0.04):
+    try:
+        metrics = RiskMetricsCalculator.analyze_portfolio_risk(req.prices, risk_free_rate)
+        return {
+            "ticker": req.ticker,
+            "risk_free_rate": risk_free_rate,
+            "metrics": metrics
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -2,7 +2,7 @@
 Technical Analysis Indicators Engine for SignalWatch.
 Implements mathematically rigorous financial indicators in pure Python.
 """
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 import math
 
 class TechnicalIndicators:
@@ -129,3 +129,76 @@ class TechnicalIndicators:
             bands.append((upper, middle, lower))
 
         return bands
+
+    @staticmethod
+    def macd(prices: List[float], fast: int = 12, slow: int = 26, signal: int = 9) -> Dict[str, List[Optional[float]]]:
+        """
+        Calculates Moving Average Convergence Divergence (MACD).
+        MACD Line = EMA(fast) - EMA(slow)
+        Signal Line = EMA(MACD Line, signal)
+        Histogram = MACD Line - Signal Line
+        """
+        if fast >= slow:
+            raise ValueError("Fast period must be strictly less than slow period.")
+
+        fast_ema = TechnicalIndicators.exponential_moving_average(prices, fast)
+        slow_ema = TechnicalIndicators.exponential_moving_average(prices, slow)
+
+        macd_line: List[Optional[float]] = []
+        valid_macd_values: List[float] = []
+
+        for f, s in zip(fast_ema, slow_ema):
+            if f is not None and s is not None:
+                diff = round(f - s, 4)
+                macd_line.append(diff)
+                valid_macd_values.append(diff)
+            else:
+                macd_line.append(None)
+
+        # Compute signal line over MACD line
+        signal_line: List[Optional[float]] = [None] * (len(prices) - len(valid_macd_values))
+        if len(valid_macd_values) >= signal:
+            raw_signal = TechnicalIndicators.exponential_moving_average(valid_macd_values, signal)
+            signal_line.extend(raw_signal)
+        else:
+            signal_line.extend([None] * len(valid_macd_values))
+
+        histogram: List[Optional[float]] = []
+        for m, sig in zip(macd_line, signal_line):
+            if m is not None and sig is not None:
+                histogram.append(round(m - sig, 4))
+            else:
+                histogram.append(None)
+
+        return {
+            "macd_line": macd_line,
+            "signal_line": signal_line,
+            "histogram": histogram
+        }
+
+    @staticmethod
+    def vwap(prices: List[float], volumes: List[float]) -> List[Optional[float]]:
+        """
+        Calculates Cumulative Volume-Weighted Average Price (VWAP).
+        VWAP = Cumulative(Price * Volume) / Cumulative(Volume)
+        """
+        if len(prices) != len(volumes):
+            raise ValueError("Prices and volumes lists must have identical lengths.")
+        if not prices:
+            return []
+
+        cum_pv = 0.0
+        cum_v = 0.0
+        vwap_series: List[Optional[float]] = []
+
+        for p, v in zip(prices, volumes):
+            if v < 0:
+                raise ValueError("Volume must be non-negative.")
+            cum_pv += p * v
+            cum_v += v
+            if cum_v > 0:
+                vwap_series.append(round(cum_pv / cum_v, 4))
+            else:
+                vwap_series.append(None)
+
+        return vwap_series

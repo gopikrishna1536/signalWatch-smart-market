@@ -46,6 +46,32 @@ class TestTechnicalIndicators(unittest.TestCase):
             self.assertGreater(upper, middle)
             self.assertGreater(middle, lower)
 
+    def test_macd_calculation(self):
+        prices = [float(x) for x in range(1, 40)]
+        res = TechnicalIndicators.macd(prices, fast=5, slow=10, signal=3)
+        self.assertIn("macd_line", res)
+        self.assertIn("signal_line", res)
+        self.assertIn("histogram", res)
+        valid_macd = [x for x in res["macd_line"] if x is not None]
+        self.assertTrue(len(valid_macd) > 0)
+        # Uptrend should have positive MACD line (Fast EMA > Slow EMA)
+        self.assertGreater(valid_macd[-1], 0)
+
+    def test_vwap_calculation(self):
+        prices = [100.0, 105.0, 110.0]
+        volumes = [10.0, 20.0, 30.0]
+        # Cum PV: (100*10) + (105*20) + (110*30) = 1000 + 2100 + 3300 = 6400
+        # Cum V: 10 + 20 + 30 = 60
+        # VWAP = 6400 / 60 = 106.6667
+        vwap_series = TechnicalIndicators.vwap(prices, volumes)
+        self.assertEqual(len(vwap_series), 3)
+        self.assertEqual(vwap_series[0], 100.0)
+        self.assertAlmostEqual(vwap_series[-1], 106.6667, places=4)
+
+    def test_vwap_length_mismatch(self):
+        with self.assertRaises(ValueError):
+            TechnicalIndicators.vwap([10.0, 20.0], [5.0])
+
 
 class TestMarketSignalEngine(unittest.TestCase):
     def test_golden_cross_detection(self):

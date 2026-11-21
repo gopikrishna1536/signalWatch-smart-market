@@ -1,0 +1,187 @@
+openapi: 3.0.3
+info:
+  title: SignalWatch Smart Market API
+  description: High-performance quantitative finance and technical analysis microservice engine.
+  version: 1.0.0
+  contact:
+    name: Gopi Krishna
+    email: gopikrishna7223@gmail.com
+servers:
+  - url: http://localhost:8000
+    description: Local Development Server
+paths:
+  /health:
+    get:
+      summary: Service Health Check
+      responses:
+        '200':
+          description: API is operational
+  /api/indicators/sma:
+    post:
+      summary: Compute Simple Moving Average (SMA)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker, prices, window]
+              properties:
+                ticker:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    type: number
+                window:
+                  type: integer
+      responses:
+        '200':
+          description: Calculated SMA series
+  /api/indicators/ema:
+    post:
+      summary: Compute Exponential Moving Average (EMA)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker, prices, window]
+              properties:
+                ticker:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    type: number
+                window:
+                  type: integer
+      responses:
+        '200':
+          description: Calculated EMA series
+  /api/indicators/rsi:
+    post:
+      summary: Compute Relative Strength Index (RSI)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker, prices]
+              properties:
+                ticker:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    type: number
+                period:
+                  type: integer
+                  default: 14
+      responses:
+        '200':
+          description: Calculated RSI series
+  /api/indicators/bollinger:
+    post:
+      summary: Compute Bollinger Bands (Upper, Middle, Lower)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker, prices]
+              properties:
+                ticker:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    type: number
+                window:
+                  type: integer
+                  default: 20
+                num_std:
+                  type: number
+                  default: 2.0
+      responses:
+        '200':
+          description: Calculated Bollinger Bands
+  /api/indicators/macd:
+    post:
+      summary: Compute MACD Line, Signal Line, and Histogram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker, prices]
+              properties:
+                ticker:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    type: number
+                fast:
+                  type: integer
+                  default: 12
+                slow:
+                  type: integer
+                  default: 26
+                signal:
+                  type: integer
+                  default: 9
+      responses:
+        '200':
+          description: Calculated MACD indicators
+  /api/indicators/vwap:
+    post:
+      summary: Compute Volume-Weighted Average Price (VWAP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker, prices, volumes]
+              properties:
+                ticker:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    type: number
+                volumes:
+                  type: array
+                  items:
+                    type: number
+      responses:
+        '200':
+          description: Calculated VWAP series
+  /api/analytics/risk-metrics:
+    post:
+      summary: Compute Portfolio Sharpe, Sortino Ratios, and Volatility
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker, prices]
+              properties:
+                ticker:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    type: number
+                risk_free_rate:
+                  type: number
+                  default: 0.04
+      responses:
+        '200':
+          description: Risk metrics and classification profile
